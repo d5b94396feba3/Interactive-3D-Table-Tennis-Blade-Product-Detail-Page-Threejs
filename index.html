@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Resonant PALIS Blade Configurator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #121316;
+    --primary-hover: #2a2c32;
+    --accent: #d97706;
+    --accent-light: #fef3c7;
+    --accent-dark: #b45309;
+    --bg-page: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-stage: radial-gradient(circle at 50% 45%, #f1f5f9 0%, #e2e8f0 100%);
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 12px rgba(15,23,42,0.08);
+    --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1);
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-serif: 'Playfair Display', Georgia, serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { 
+    min-height: 100%; 
+    background-color: var(--bg-page); 
+    color: var(--text-main); 
+    font-family: var(--font-sans); 
+    -webkit-font-smoothing: antialiased; 
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* Announcement Bar */
+  .wc-notice-bar { background: var(--primary); color: #e2e8f0; font-size: 12px; padding: 7px 24px; display: flex; justify-content: space-between; align-items: center; font-weight: 500; }
+  .wc-notice-bar span b { color: #f59e0b; }
+  .wc-notice-links { display: flex; gap: 18px; list-style: none; }
+  .wc-notice-links a { color: #94a3b8; text-decoration: none; transition: color 0.15s; }
+  .wc-notice-links a:hover { color: #fff; }
+
+  /* Store Header */
+  .wc-header { height: 76px; background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); width: 100%; }
+  .brand-wrap { display: flex; align-items: center; gap: 14px; text-decoration: none; color: var(--text-main); }
+  .brand-logo-img { height: 42px; width: auto; object-fit: contain; border-radius: 4px; }
+  .brand-title { display: flex; flex-direction: column; }
+  .brand-title b { font-size: 18px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; line-height: 1.1; }
+  .brand-title span { font-size: 11px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+
+  .wc-nav { display: flex; gap: 28px; list-style: none; font-size: 14px; font-weight: 600; }
+  .wc-nav a { color: var(--text-muted); text-decoration: none; transition: color 0.15s; }
+  .wc-nav a:hover, .wc-nav a.active { color: var(--primary); }
+
+  /* Layout Grid */
+  .product-single-wrap { 
+    max-width: 1440px; 
+    width: 100%;
+    margin: 0 auto; 
+    padding: 24px 32px 64px; 
+    display: grid; 
+    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 460px); 
+    gap: 40px; 
+    align-items: start; 
+  }
+
+  /* Stage & 3D Canvas */
+  .viewer-sticky-container { position: sticky; top: 92px; display: flex; flex-direction: column; gap: 16px; width: 100%; min-width: 0; }
+  .viewer-stage { 
+    position: relative; 
+    width: 100%; 
+    height: 580px; 
+    background: var(--bg-stage); 
+    border-radius: var(--radius-lg); 
+    border: 1px solid var(--border-color); 
+    overflow: hidden; 
+    box-shadow: var(--shadow-md); 
+    touch-action: none;
+  }
+  .viewer-stage:fullscreen, .viewer-stage:-webkit-full-screen { border-radius: 0; border: none; width: 100vw !important; height: 100vh !important; }
+  canvas { display: block; width: 100% !important; height: 100% !important; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+
+  /* Loader Overlay */
+  .stage-loader {
+    position: absolute;
+    inset: 0;
+    background: rgba(241, 245, 249, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    z-index: 50;
+    transition: opacity 0.3s ease;
+  }
+  .spinner {
+    width: 38px;
+    height: 38px;
+    border: 3.5px solid var(--border-color);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .loader-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+    letter-spacing: 0.05em;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .stage-badge { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border-color); font-size: 12px; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-sm); pointer-events: none; z-index: 5; }
+  .stage-badge .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; }
+
+  .fullscreen-btn { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); border: 1px solid var(--border-color); padding: 8px 14px; border-radius: var(--radius-md); font-size: 12px; font-weight: 700; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-sm); z-index: 10; transition: all 0.15s; }
+  .fullscreen-btn:hover { background: #fff; box-shadow: var(--shadow-md); }
+
+  /* Preset Navigation Bar */
+  .views { 
+    position: absolute; 
+    bottom: 20px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    display: flex; 
+    gap: 4px; 
+    background: rgba(255,255,255,0.92); 
+    backdrop-filter: blur(12px); 
+    padding: 6px; 
+    border-radius: var(--radius-lg); 
+    border: 1px solid var(--border-color); 
+    box-shadow: var(--shadow-lg); 
+    z-index: 5; 
+    max-width: 92%; 
+    overflow-x: auto; 
+    scrollbar-width: none; 
+    -webkit-overflow-scrolling: touch; 
+  }
+  .views::-webkit-scrollbar { display: none; }
+  .views button { border: none; background: transparent; padding: 8px 14px; border-radius: var(--radius-md); font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .views button:hover { color: var(--text-main); background: rgba(0,0,0,0.04); }
+  .views button.active { background: var(--primary); color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+
+  /* Gallery Thumbnails (Blade 1 - Blade 4 & 360 View) */
+  .product-gallery-thumbs { 
+    display: grid; 
+    grid-template-columns: repeat(5, 1fr); 
+    gap: 10px; 
+    width: 100%;
+  }
+  .thumb-card { background: #fff; border: 2px solid var(--border-color); border-radius: var(--radius-md); padding: 6px; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .thumb-card:hover { border-color: #cbd5e1; transform: translateY(-2px); }
+  .thumb-card.active { border-color: var(--primary); background: #f8fafc; box-shadow: var(--shadow-sm); }
+  .thumb-img-wrap { width: 100%; aspect-ratio: 1; border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-stage); display: flex; align-items: center; justify-content: center; margin-bottom: 4px; border: 1px solid rgba(0,0,0,0.05); position: relative; }
+  .thumb-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+  .thumb-card span { font-size: 11px; font-weight: 700; color: var(--text-main); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* 360 View Thumbnail Overlay Styling */
+  .thumb-360-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    transition: background 0.2s;
+  }
+  .thumb-card:hover .thumb-360-overlay {
+    background: rgba(15, 23, 42, 0.3);
+  }
+
+  /* Product Customisation Panel */
+  .product-summary { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-sm); width: 100%; min-width: 0; }
+  .product-header-badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent-dark); background: var(--accent-light); padding: 4px 10px; border-radius: 4px; display: inline-block; margin-bottom: 12px; }
+  .product-title { font-family: var(--font-serif); font-size: 34px; font-weight: 700; color: var(--text-main); line-height: 1.15; margin-bottom: 8px; word-break: break-word; }
+  .product-meta { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-muted); margin-bottom: 16px; flex-wrap: wrap; }
+  .stars { color: #f59e0b; letter-spacing: 2px; }
+
+  .product-desc-short { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9; }
+
+  .price-weight-banner { background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; }
+  .price-box small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-weight: 600; }
+  .price-box b { font-size: 28px; font-weight: 800; color: var(--text-main); line-height: 1; }
+  .weight-box { text-align: right; }
+  .weight-box small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-weight: 600; }
+  .weight-box span { font-size: 20px; font-weight: 700; color: var(--text-main); }
+
+  .config-section { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9; }
+  .config-section:last-of-type { border-bottom: none; }
+  .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .section-head label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-main); }
+
+  /* Option Buttons & Tools */
+  .handles { display: flex; flex-direction: column; gap: 8px; }
+  .opt { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 2px solid var(--border-color); border-radius: var(--radius-md); background: #fff; cursor: pointer; transition: all 0.2s; text-align: left; width: 100%; }
+  .opt:hover { border-color: #cbd5e1; }
+  .opt.active { border-color: var(--primary); background: #f8fafc; box-shadow: var(--shadow-sm); }
+  .opt b { display: block; font-size: 14px; font-weight: 700; color: var(--text-main); }
+  .opt span { display: block; font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+  .color-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #e2e8f0; color: #334155; margin-top: 4px; }
+  .color-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* Quantity & Cart Controls */
+  .qty-cart-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+  .qty-picker { display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: #fff; height: 50px; padding: 0 4px; }
+  .qty-btn { width: 34px; height: 34px; border: none; background: none; font-size: 18px; font-weight: 700; color: var(--text-main); cursor: pointer; border-radius: var(--radius-sm); display: grid; place-items: center; }
+  .qty-btn:hover { background: #f1f5f9; }
+  .qty-val { width: 30px; text-align: center; font-size: 15px; font-weight: 700; color: var(--text-main); }
+  .btn-cart { flex: 1; min-width: 180px; height: 50px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; box-shadow: var(--shadow-md); margin-top: 0; }
+  .btn-cart:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+
+  /* Product Details Accordion */
+  .product-accordion { margin-top: 24px; border-top: 1px solid var(--border-color); }
+  .product-accordion details { border-bottom: 1px solid var(--border-color); padding: 14px 0; }
+  .product-accordion summary { font-size: 13px; font-weight: 700; color: var(--text-main); cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase; letter-spacing: 0.05em; }
+  .product-accordion summary::-webkit-details-marker { display: none; }
+  .product-accordion summary::after { content: '+'; font-size: 16px; color: var(--text-muted); }
+  .product-accordion details[open] summary::after { content: '−'; }
+  .product-accordion p { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-top: 10px; }
+
+  /* Responsive Breakpoints */
+  @media (max-width: 1024px) {
+    .product-single-wrap { grid-template-columns: minmax(0, 1fr); padding: 16px; gap: 24px; }
+    .viewer-stage { height: 460px; }
+    .viewer-sticky-container { position: relative; top: 0; }
+    .product-gallery-thumbs { gap: 8px; }
+  }
+
+  @media (max-width: 640px) {
+    .wc-notice-bar { font-size: 11px; padding: 6px 14px; text-align: center; justify-content: center; }
+    .wc-notice-links { display: none; }
+    .wc-header { padding: 0 16px; height: 64px; }
+    .wc-nav { display: none; }
+    .brand-title b { font-size: 15px; letter-spacing: 0.1em; }
+    .brand-title span { font-size: 9px; }
+    .brand-logo-img { height: 34px; }
+
+    .product-single-wrap { padding: 12px 12px 32px; gap: 16px; width: 100vw; }
+    .product-summary { padding: 16px; border-radius: var(--radius-md); }
+    .product-title { font-size: 24px; }
+
+    .viewer-stage { height: clamp(280px, 48vh, 380px); border-radius: var(--radius-md); }
+    .stage-badge { top: 10px; left: 10px; padding: 4px 10px; font-size: 10px; }
+    .fullscreen-btn { top: 10px; right: 10px; padding: 6px 10px; font-size: 11px; }
+
+    .views { bottom: 10px; padding: 4px; gap: 2px; width: calc(100% - 20px); max-width: 100%; justify-content: flex-start; }
+    .views button { padding: 6px 10px; font-size: 11px; }
+
+    .product-gallery-thumbs { 
+      display: flex; 
+      overflow-x: auto; 
+      gap: 8px; 
+      padding-bottom: 4px; 
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .product-gallery-thumbs::-webkit-scrollbar { display: none; }
+    .thumb-card { flex: 0 0 72px; min-width: 72px; padding: 4px; }
+    .thumb-card span { font-size: 9px; }
+
+    .price-weight-banner { padding: 12px 14px; }
+    .price-box b { font-size: 24px; }
+    .weight-box span { font-size: 18px; }
+
+    .opt { padding: 10px 12px; gap: 10px; }
+    .opt b { font-size: 13px; }
+    .opt span { font-size: 11px; }
+
+    .qty-cart-row { flex-direction: column; gap: 10px; }
+    .qty-picker { width: 100%; justify-content: space-between; padding: 0 16px; }
+    .qty-val { width: 60px; }
+    .btn-cart { width: 100%; font-size: 14px; }
+  }
+
+  @media (max-width: 380px) {
+    .viewer-stage { height: 260px; }
+    .product-title { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- Notice Bar -->
+  <div class="wc-notice-bar">
+    <span><b>RESONANT SWISS MADE:</b> Handcrafted Table Tennis Blades • Express Shipping</span>
+    <ul class="wc-notice-links">
+      <li><a href="#">Support</a></li>
+      <li><a href="#">Guarantee</a></li>
+    </ul>
+  </div>
+
+  <!-- Header -->
+  <header class="wc-header">
+    <a href="#" class="brand-wrap">
+      <!-- <img src="assets/logo.jpg" alt="Logo" class="brand-logo-img"> -->
+      <div class="brand-title">
+        <b>RESONANT</b>
+        <span>Swiss Made Blades</span>
+      </div>
+    </a>
+    <ul class="wc-nav">
+      <li><a href="#" class="active">Configurator</a></li>
+      <li><a href="#">Blade Series</a></li>
+      <li><a href="#">Craftsmanship</a></li>
+    </ul>
+  </header>
+
+  <!-- Product Layout Grid -->
+  <main class="product-single-wrap">
+    
+    <!-- LEFT: 3D Configurator Stage & Gallery -->
+    <div class="viewer-sticky-container">
+      <div class="viewer-stage" id="stageContainer">
+        <!-- 3D Loader Overlay -->
+        <div class="stage-loader" id="stageLoader">
+          <div class="spinner"></div>
+          <span class="loader-text">Loading 3D Model...</span>
+        </div>
+
+        <div class="stage-badge">
+          <div class="dot"></div> Interactive 3D Render
+        </div>
+
+        <button class="fullscreen-btn" id="fsToggle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          Full Screen
+        </button>
+
+        <!-- Camera Angles Toolbar -->
+        <div class="views">
+          <button class="alt active" data-view="front">Front</button>
+          <button class="alt" data-view="back">Back</button>
+          <button class="alt" data-view="edge">Edge</button>
+          <button class="alt" data-view="butt">Handle Butt</button>
+          <button class="alt" id="btn360" data-view="360">360°</button>
+        </div>
+      </div>
+
+      <!-- Standard Product Photo Gallery Strip (Blade 1 - Blade 4 + 360 View) -->
+      <div class="product-gallery-thumbs">
+        <div class="thumb-card active" data-view="front" data-h="1">
+          <div class="thumb-img-wrap">
+            <img src="assets/Blade 1.jpg" alt="Blade 1 Front" loading="lazy">
+          </div>
+          <span>Front</span>
+        </div>
+        <div class="thumb-card" data-view="back" data-h="1">
+          <div class="thumb-img-wrap">
+            <img src="assets/Blade 3.jpg" alt="Blade 2 Back" loading="lazy">
+          </div>
+          <span>Back</span>
+        </div>
+        <div class="thumb-card" data-view="edge" data-h="2">
+          <div class="thumb-img-wrap">
+            <img src="assets/Handle 2.jpg" alt="Blade 4 Alternate Handle" loading="lazy"> 
+          </div>
+          <span>Handle 2</span>
+        </div>
+        <div class="thumb-card" data-view="butt" data-h="1">
+          <div class="thumb-img-wrap">
+            <img src="assets/logo.jpg" alt="Blade 3 Butt Logo" loading="lazy">
+          </div>
+          <span>Handle Butt</span>
+        </div>
+        <div class="thumb-card" data-view="360">
+          <div class="thumb-img-wrap">
+            <img src="assets/Blade 1.jpg" alt="360 View Background" loading="lazy">
+            <div class="thumb-360-overlay">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0114.93-4M20 12a8 8 0 01-14.93 4m13.93-4h-4m-9.93 4h4"/></svg>
+            </div>
+          </div>
+          <span>360°</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Options & Store Customizer -->
+    <div class="product-summary">
+      <span class="product-header-badge">Handcrafted In Switzerland</span>
+      <h1 class="product-title">PALIS Blade</h1>
+      
+      <div class="product-meta">
+        <div class="stars">★★★★★</div>
+        <span>(48 reviews)</span>
+        <span>•</span>
+        <span style="color:#22c55e; font-weight:600;">In Stock</span>
+      </div>
+
+      <p class="product-desc-short">
+        The PALIS is an offensive 5-ply handcrafted table tennis blade built in Lucerne, Switzerland. Custom engineered with fine Limba veneers and precision weight control.
+      </p>
+
+      <div class="price-weight-banner">
+        <div class="price-box">
+          <small>Total Price</small>
+          <b id="vPrice">€169</b>
+        </div>
+        <div class="weight-box">
+          <small>Estimated Weight</small>
+          <span>84 g</span>
+        </div>
+      </div>
+
+      <!-- Handle Customizer Selection -->
+      <div class="config-section">
+        <div class="section-head">
+          <label>Select Handle Option</label>
+        </div>
+        <div class="handles">
+          <button id="b1" class="opt active">
+            <div>
+              <b>Handle 1</b>
+              <span>Dark wood finish with PALIS label</span>
+              <div class="color-pill"><span class="color-dot" style="background:#38262c;"></span> Dark Walnut / Ebony</div>
+            </div>
+          </button>
+          <button id="b2" class="opt">
+            <div>
+              <b>Handle 2</b>
+              <span>Purple Heart & Maple multi-layer</span>
+              <div class="color-pill"><span class="color-dot" style="background:#5c1827;"></span> Purple Heart & Maple</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Standard Product Quantity Controls & Cart Button -->
+      <div class="qty-cart-row">
+        <div class="qty-picker">
+          <button class="qty-btn" id="qtyMinus" aria-label="Decrease quantity">−</button>
+          <span class="qty-val" id="qtyVal">1</span>
+          <button class="qty-btn" id="qtyPlus" aria-label="Increase quantity">+</button>
+        </div>
+        <button class="btn-cart" id="btnCart">Add Custom Configuration to Cart</button>
+      </div>
+
+      <!-- Accordion Specifications -->
+      <div class="product-accordion">
+        <details open>
+          <summary>Craftsmanship & Specifications</summary>
+          <p>Hand-built in Switzerland using premium 5-ply construction. Optimized weight balance, precise edge contouring, and photographic wood finishes.</p>
+        </details>
+        <details>
+          <summary>Shipping & Guarantee</summary>
+          <p>Includes free express international shipping and a 2-year warranty with custom certificate of authenticity.</p>
+        </details>
+      </div>
+    </div>
+  </main>
+
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/occt-import-js@0.0.23/dist/occt-import-js.js"></script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+// ================= CONFIG =================
+const STEP_FILE = 'assets/Flared.step';
+const GLTF_FILE = 'assets/flared-blade.gltf';
+const FILES = {
+  bladeFront: 'assets/Blade 1.jpg',
+  bladeBack : 'assets/Blade 3.jpg',
+  handle2   : 'assets/Handle 2.jpg',
+  logo      : 'assets/logo.jpg'
+};
+const PHOTO = { ref:1930, cx:973, cy:961.5, len:1657 };
+const LOGO_DISC = { cx:965, cy:958, r:300 };
+const DISC_FRACTION = 0.48;
+
+const $ = id => document.getElementById(id);
+const url = p => encodeURI(p);
+let dirty = true; const redraw = () => dirty = true;
+
+// Loader element controller
+const stageLoader = $('stageLoader');
+const hideLoader = () => {
+  if (stageLoader) {
+    stageLoader.style.opacity = '0';
+    setTimeout(() => { stageLoader.style.display = 'none'; }, 300);
+  }
+};
+
+// ================= Renderer / scene =================
+const stageEl = document.getElementById('stageContainer');
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(stageEl.clientWidth, stageEl.clientHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+stageEl.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf1f5f9);
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(),0.04).texture;
+const key = new THREE.DirectionalLight(0xffffff,1.0); key.position.set(1,2,3); scene.add(key);
+
+const camera = new THREE.PerspectiveCamera(35, stageEl.clientWidth/stageEl.clientHeight, 0.01, 100);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.minPolarAngle = 0; controls.maxPolarAngle = Math.PI;
+controls.addEventListener('change',redraw);
+
+const handleResize = () => {
+  const width = stageEl.clientWidth;
+  const height = stageEl.clientHeight;
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+  redraw();
+};
+
+addEventListener('resize', handleResize);
+if (window.ResizeObserver) {
+  new ResizeObserver(handleResize).observe(stageEl);
+}
+
+const aniso = renderer.capabilities.getMaxAnisotropy();
+
+// Fullscreen Control
+const fsBtn = $('fsToggle');
+fsBtn.onclick = () => {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    if (stageEl.requestFullscreen) stageEl.requestFullscreen();
+    else if (stageEl.webkitRequestFullscreen) stageEl.webkitRequestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+};
+document.addEventListener('fullscreenchange', handleResize);
+document.addEventListener('webkitfullscreenchange', handleResize);
+
+// ================= Uniforms =================
+const dummy = () => { const t=new THREE.DataTexture(new Uint8Array([90,60,50,255]),1,1); t.colorSpace=THREE.SRGBColorSpace; t.needsUpdate=true; return t; };
+const shared = {
+  uButt:{value:new THREE.Vector4(0,0,0.1,0.05)},
+  uButtY:{value:-0.49}
+};
+const bladeU = Object.assign({
+  uTexA:{value:dummy()}, uTexB:{value:dummy()},
+  uPhoto:{value:new THREE.Vector3(PHOTO.cx/PHOTO.ref, PHOTO.cy/PHOTO.ref, PHOTO.len/PHOTO.ref)},
+  uSideA:{value:1}, uZ:{value:new THREE.Vector2(-0.01,0.01)},
+  uPale:{value:new THREE.Color('#e3c79a')}
+}, shared);
+
+const h1U = Object.assign({ 
+  uTexA:{value:dummy()}, uTexB:{value:dummy()}, uPhoto:bladeU.uPhoto, uSideA:bladeU.uSideA,
+  uPurple:{value:new THREE.Color('#38262c')}
+}, shared);
+
+const h2U = Object.assign({
+  uHC:{value:new THREE.Vector3()},
+  uSz:{value:new THREE.Vector3(0.1,0.25,0.05)},
+  uY:{value:new THREE.Vector2(-0.5,-0.2)},
+  uPurple:{value:new THREE.Color('#5c1827')},
+  uMaple:{value:new THREE.Color('#e7d7c1')},
+  uBeech:{value:new THREE.Color('#c9a67e')},
+  uStripeFlip:{value:1}
+}, shared);
+
+// ================= Materials =================
+const COMMON_V = 'varying vec3 vP; varying vec3 vN;';
+const COMMON_F = 'varying vec3 vP; varying vec3 vN;';
+function makeMat(cacheKey, uniforms, decl, body){
+  const m = new THREE.MeshPhysicalMaterial({color:0xffffff,roughness:0.5,clearcoat:0.0,clearcoatRoughness:0.0});
+  m.customProgramCacheKey = () => cacheKey;
+  m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, uniforms);
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>','#include <common>\n'+COMMON_V)
+      .replace('#include <begin_vertex>','#include <begin_vertex>\nvP = position; vN = normal;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>','#include <common>\n'+COMMON_F+'\n'+decl)
+      .replace('#include <map_fragment>',body)
+      .replace('#include <opaque_fragment>',
+        decl.includes('gPhoto')
+          ? '#include <opaque_fragment>\n gl_FragColor.rgb = gPhoto;'
+          : '#include <opaque_fragment>');
+  };
+  return m;
+}
+
+// Blade Material
+const bladeMat = makeMat('blade', bladeU,
+`uniform sampler2D uTexA; uniform sampler2D uTexB; uniform vec3 uPhoto; uniform float uSideA;
+ uniform vec3 uPale; vec3 gPhoto;`,
+`{
+  vec3 n = normalize(vN);
+  float side = n.z >= 0.0 ? 1.0 : -1.0;
+  vec2 uvp = vec2(uPhoto.x + side*vP.x*uPhoto.z, 1.0 - uPhoto.y + vP.y*uPhoto.z);
+  vec2 uvpClamped = clamp(uvp, vec2(0.005), vec2(0.995));
+  vec3 ca = texture2D(uTexA, uvpClamped).rgb;
+  vec3 cb = texture2D(uTexB, uvpClamped).rgb;
+  vec3 c = (side == uSideA) ? ca : cb;
+
+  float isFace = step(0.85, abs(n.z));
+  // FIX: near-white photo pixels are treated as edge color, not face
+  float whiteMask = step(0.82, min(c.r, min(c.g, c.b)));
+  isFace *= (1.0 - whiteMask);
+  diffuseColor.rgb = mix(uPale, c, isFace);
+  gPhoto = diffuseColor.rgb;
+}`);
+
+// Handle 1 Material
+const handle1Mat = makeMat('h1', h1U,
+`uniform sampler2D uTexA; uniform sampler2D uTexB; uniform vec3 uPhoto; uniform float uSideA; uniform vec3 uPurple; vec3 gPhoto;`,
+`{
+  vec3 n = normalize(vN);
+  float side = n.z >= 0.0 ? 1.0 : -1.0;
+  float vv = 1.0 - uPhoto.y + vP.y*uPhoto.z;
+  vec2 uvp = vec2(uPhoto.x + side*vP.x*uPhoto.z, vv);
+  vec2 uvpClamped = clamp(uvp, vec2(0.005), vec2(0.995));
+  
+  vec3 cF = (side == uSideA) ? texture2D(uTexA, uvpClamped).rgb : texture2D(uTexB, uvpClamped).rgb;
+  
+  float isFace = step(0.85, abs(n.z));
+  // FIX: near-white photo pixels are treated as edge color, not face
+  float whiteMask = step(0.82, min(cF.r, min(cF.g, cF.b)));
+  isFace *= (1.0 - whiteMask);
+  diffuseColor.rgb = mix(uPurple, cF, isFace);
+  gPhoto = diffuseColor.rgb;
+}`);
+
+// Handle 2 Material (Strict Geometry Clipping to Handle Bounds)
+const handle2Mat = makeMat('h2', h2U,
+`uniform vec3 uHC; uniform vec3 uSz; uniform vec2 uY;
+ uniform vec3 uPurple; uniform vec3 uMaple; uniform vec3 uBeech;
+ uniform float uStripeFlip; float uButtY; vec3 gPhoto;`,
+`{
+  vec3 n = normalize(vN);
+  vec3 p = vP - uHC;
+  if(uStripeFlip < 0.0) p.x = -p.x;
+
+  float normX = clamp(p.x / (uSz.x * 0.5) * 0.5 + 0.5, 0.0, 1.0);
+  float normY = clamp((vP.y - uY.x) / max(uY.y - uY.x, 1e-5), 0.0, 1.0);
+
+  float woodNoise = sin(vP.y * 380.0 + sin(vP.x * 140.0) * 3.0) * 0.045 + sin(vP.x * 600.0) * 0.02;
+  vec3 purpleWood = uPurple * (0.94 + woodNoise);
+
+  float st1 = step(abs(normX - 0.40), 0.015);
+  float st2 = step(abs(normX - 0.50), 0.015);
+  float st3 = step(abs(normX - 0.60), 0.015);
+  float topStripes = clamp(st1 + st2 + st3, 0.0, 1.0);
+
+  float isFrontBack = step(0.85, abs(n.z));
+  float stripeMask = topStripes * isFrontBack;
+
+  bool isButt = (vP.y < uY.x + 0.005) && (abs(n.y) > 0.6);
+  float capHeight = (1.0 - smoothstep(0.035, 0.045, normY)) * step(vP.y, uY.x + (uY.y - uY.x) * 0.2);
+  
+  float distR = length(vec2(p.x * 24.0, p.z * 48.0));
+  float endGrain = sin(distR * 14.0) * 0.06;
+  vec3 beechWood = uBeech * (0.93 + endGrain);
+
+  vec3 col = mix(purpleWood, uMaple, stripeMask);
+  if(isButt || capHeight > 0.0) {
+    col = mix(col, beechWood, isButt ? 1.0 : capHeight);
+  }
+
+  diffuseColor.rgb = col;
+  gPhoto = diffuseColor.rgb;
+}`);
+
+const handleMats = { 1:handle1Mat, 2:handle2Mat };
+bladeMat.toneMapped = false;
+handle1Mat.toneMapped = false;
+handle2Mat.toneMapped = false;
+
+// ================= Textures =================
+function loadImage(p){ 
+  return new Promise((res,rej)=>{ 
+    const im=new Image(); 
+    im.crossOrigin = 'Anonymous';
+    im.onload=()=>res(im); 
+    im.onerror=()=>rej(new Error('Cannot load '+p)); 
+    im.src=url(p); 
+  }); 
+}
+function mkTex(src){
+  const t = src instanceof HTMLCanvasElement ? new THREE.CanvasTexture(src) : new THREE.Texture(src);
+  t.colorSpace = THREE.SRGBColorSpace; 
+  t.anisotropy = aniso;
+  t.wrapS = THREE.ClampToEdgeWrapping;
+  t.wrapT = THREE.ClampToEdgeWrapping;
+  t.needsUpdate = true; 
+  return t;
+}
+let logoOvalTex=null, logoDiscTex=null;
+async function prepareTextures(){
+  const [iF,iB,iL] = await Promise.all([FILES.bladeFront,FILES.bladeBack,FILES.logo].map(loadImage));
+  const cv = document.createElement('canvas'); cv.width=iB.width; cv.height=iB.height;
+  const cx = cv.getContext('2d'); cx.drawImage(iB,0,0);
+
+  const k = Math.min(1, 1400/iL.width);
+  const W = Math.round(iL.width*k), H = Math.round(iL.height*k);
+  const lc = document.createElement('canvas'); lc.width=W; lc.height=H;
+  const lg = lc.getContext('2d',{willReadFrequently:true});
+  lg.drawImage(iL,0,0,W,H);
+
+  const im = lg.getImageData(0,0,W,H), d = im.data;
+  const bg = new Uint8Array(W*H), stack = [];
+  const isBg = p => (d[p*4]>200 && d[p*4+1]>200 && d[p*4+2]>200);
+  const push = p => { if(!bg[p] && isBg(p)){ bg[p]=1; stack.push(p); } };
+  for(let x=0;x<W;x++){ push(x); push((H-1)*W+x); }
+  for(let y=0;y<H;y++){ push(y*W); push(y*W+W-1); }
+  while(stack.length){
+    const p=stack.pop(), x=p%W;
+    if(x>0) push(p-1); if(x<W-1) push(p+1);
+    if(p>=W) push(p-W); if(p<W*(H-1)) push(p+W);
+  }
+
+  for(let pass=0; pass<14; pass++){
+    const nb = bg.slice();
+    for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++){
+      const p=y*W+x;
+      if(!bg[p] && (bg[p-1]||bg[p+1]||bg[p-W]||bg[p+W])) nb[p]=1;
+    }
+    bg.set(nb);
+  }
+  let x0=W,y0=H,x1=0,y1=0;
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    const p=y*W+x;
+    if(bg[p]) d[p*4+3]=0;
+    else { if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+  }
+  lg.putImageData(im,0,0);
+  const oc = document.createElement('canvas'); oc.width=x1-x0+1; oc.height=y1-y0+1;
+  oc.getContext('2d').drawImage(lc, x0,y0,oc.width,oc.height, 0,0,oc.width,oc.height);
+
+  const sl = iL.width/1930, D = LOGO_DISC, dc = document.createElement('canvas');
+  dc.width = dc.height = Math.round(2*D.r*sl);
+  const dg = dc.getContext('2d');
+  dg.beginPath(); dg.arc(dc.width/2,dc.height/2,dc.width/2,0,Math.PI*2); dg.clip();
+  dg.drawImage(iL, (D.cx-D.r)*sl,(D.cy-D.r)*sl,2*D.r*sl,2*D.r*sl, 0,0,dc.width,dc.height);
+  logoOvalTex = mkTex(oc); logoDiscTex = mkTex(dc);
+
+  bladeU.uTexA.value = mkTex(iF);
+  bladeU.uTexB.value = mkTex(cv);
+  h1U.uTexA.value    = bladeU.uTexA.value;
+  h1U.uTexB.value    = bladeU.uTexB.value;
+}
+
+// ================= Model loading =================
+async function readStep(){
+  const occt = await occtimportjs({locateFile:n=>'https://cdn.jsdelivr.net/npm/occt-import-js@0.0.23/dist/'+n});
+  const buf = await (await fetch(url(STEP_FILE))).arrayBuffer();
+  const r = occt.ReadStepFile(new Uint8Array(buf),{linearUnit:'millimeter',linearDeflectionType:'bounding_box_ratio',linearDeflection:0.0005,angularDeflection:0.3});
+  if(!r.success) throw new Error('STEP parse failed');
+  return r.meshes.map((m,i)=>({
+    name:m.name||('mesh_'+i),
+    pos:Float32Array.from(m.attributes.position.array),
+    nor:m.attributes.normal?Float32Array.from(m.attributes.normal.array):null,
+    idx:Uint32Array.from(m.index.array)
+  }));
+}
+async function readGltf(){
+  const gltf = await new GLTFLoader().loadAsync(url(GLTF_FILE));
+  gltf.scene.updateMatrixWorld(true);
+  const items=[];
+  gltf.scene.traverse(o=>{
+    if(!o.isMesh) return;
+    const g=o.geometry.clone(); g.applyMatrix4(o.matrixWorld);
+    const idx=g.index?Uint32Array.from(g.index.array):Uint32Array.from({length:g.attributes.position.count},(_,i)=>i);
+    items.push({name:o.name||o.parent?.name||('mesh_'+items.length),
+      pos:Float32Array.from(g.attributes.position.array),
+      nor:g.attributes.normal?Float32Array.from(g.attributes.normal.array):null, idx});
+  });
+  return items;
+}
+
+// butt logo decals
+const decals = { 1:new THREE.Group(), 2:new THREE.Group() };
+function decalMat(tex){
+  return new THREE.MeshBasicMaterial({map:tex,transparent:true,side:THREE.DoubleSide,toneMapped:false,
+    polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4});
+}
+function addDecal(n,tex,w,h,pos){
+  const g=decals[n]; g.clear();
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),decalMat(tex));
+  m.rotation.x = Math.PI/2;
+  m.rotation.z = Math.PI;
+  g.add(m); g.position.copy(pos);
+}
+let modelGroup=null, handleMeshes=[], buttTarget=-0.4, current=1;
+function buildModel(items){
+  if(modelGroup) scene.remove(modelGroup);
+  modelGroup=new THREE.Group(); handleMeshes=[];
+  const v=new THREE.Vector3();
+
+  const gb=new THREE.Box3();
+  items.forEach(it=>{for(let i=0;i<it.pos.length;i+=3)gb.expandByPoint(v.set(it.pos[i],it.pos[i+1],it.pos[i+2]))});
+  const size=gb.getSize(new THREE.Vector3()).toArray();
+  const order=[0,1,2].sort((a,b)=>size[b]-size[a]);
+  const [L,W,Th]=order, c=gb.getCenter(new THREE.Vector3()).toArray();
+  const perm=[W,L,Th]; let inv=0;
+  for(let i=0;i<3;i++)for(let j=i+1;j<3;j++)if(perm[i]>perm[j])inv++;
+  const zs=inv%2?-1:1, sc=1/size[L];
+  items.forEach(it=>{
+    for(let i=0;i<it.pos.length;i+=3){
+      const p=[it.pos[i]-c[0],it.pos[i+1]-c[1],it.pos[i+2]-c[2]];
+      it.pos[i]=p[W]*sc; it.pos[i+1]=p[L]*sc; it.pos[i+2]=p[Th]*sc*zs;
+      if(it.nor){const n=[it.nor[i],it.nor[i+1],it.nor[i+2]];it.nor[i]=n[W];it.nor[i+1]=n[L];it.nor[i+2]=n[Th]*zs}
+    }
+  });
+  const bbox=it=>{const b=new THREE.Box3();for(let i=0;i<it.pos.length;i+=3)b.expandByPoint(v.set(it.pos[i],it.pos[i+1],it.pos[i+2]));return b};
+  items.forEach(it=>{it.box=bbox(it);const s=it.box.getSize(new THREE.Vector3());it.vol=s.x*s.y*s.z});
+
+  let isH=items.map(it=>/handle/i.test(it.name));
+  if(!isH.some(Boolean)){const big=items.reduce((a,b)=>a.vol>b.vol?a:b);isH=items.map(it=>it!==big)}
+
+  const cy=l=>l.reduce((s,it)=>s+it.box.getCenter(v).y,0)/Math.max(l.length,1);
+  if(cy(items.filter((_,i)=>isH[i]))>cy(items.filter((_,i)=>!isH[i]))){
+    items.forEach(it=>{for(let i=0;i<it.pos.length;i+=3){it.pos[i]*=-1;it.pos[i+1]*=-1;if(it.nor){it.nor[i]*=-1;it.nor[i+1]*=-1}}it.box=bbox(it)});
+  }
+
+  const hb=new THREE.Box3(), bb=new THREE.Box3();
+  items.forEach((it,i)=>(isH[i]?hb:bb).union(it.box));
+  const hItems=items.filter((_,i)=>isH[i]);
+  const hs=hb.getSize(new THREE.Vector3()), hc=hb.getCenter(new THREE.Vector3());
+
+  bladeU.uZ.value.set(bb.min.z,bb.max.z);
+  h2U.uHC.value.copy(hc);
+  h2U.uSz.value.set(hs.x, hs.y, hs.z);
+  h2U.uY.value.set(hb.min.y, hb.max.y);
+  buttTarget=hb.min.y;
+
+  const tol=0.004, buttBox=new THREE.Box3();
+  hItems.forEach(it=>{for(let i=0;i<it.pos.length;i+=3) if(it.pos[i+1]<hb.min.y+tol) buttBox.expandByPoint(v.set(it.pos[i],it.pos[i+1],it.pos[i+2]))});
+  const bs=buttBox.getSize(new THREE.Vector3()), bc=buttBox.getCenter(new THREE.Vector3());
+  const bw=Math.max(bs.x,hs.x*0.5), bd=Math.max(bs.z,hs.z*0.5);
+  shared.uButt.value.set(bc.x,bc.z,bw,bd);
+  shared.uButtY.value=hb.min.y+tol;
+  const decalPos=new THREE.Vector3(bc.x,hb.min.y-0.0006,bc.z);
+  addDecal(1,logoOvalTex,bw,bd,decalPos);
+  const dd=DISC_FRACTION*bw;
+  addDecal(2,logoDiscTex,dd,dd,decalPos);
+
+  items.forEach((it,i)=>{
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.BufferAttribute(it.pos,3));
+    if(it.nor)g.setAttribute('normal',new THREE.BufferAttribute(it.nor,3));
+    g.setIndex(new THREE.BufferAttribute(it.idx,1));
+    if(!it.nor)g.computeVertexNormals();
+    const mesh=new THREE.Mesh(g,isH[i]?handleMats[current]:bladeMat);
+    mesh.name=it.name; modelGroup.add(mesh);
+    if(isH[i])handleMeshes.push(mesh);
+  });
+  modelGroup.add(decals[1],decals[2]);
+  scene.add(modelGroup);
+  return items.map((it,i)=>(isH[i]?'[handle] ':'[blade]  ')+it.name).join('\n')+
+    '\nButt face: '+(bs.x/sc).toFixed(1)+' x '+(bs.z/sc).toFixed(1)+' (CAD units), '+
+    (hItems.length)+' handle bodies';
+}
+
+// ================= UI & 360 Rotation Controls =================
+let autoRotate = false;
+function setHandle(n){
+  current=n;
+  handleMeshes.forEach(m=>m.material=handleMats[n]);
+  decals[1].visible=(n===1); decals[2].visible=(n===2);
+  $('b1').classList.toggle('active',n===1);
+  $('b2').classList.toggle('active',n===2);
+  redraw();
+}
+$('b1').onclick=()=>setHandle(1);
+$('b2').onclick=()=>setHandle(2);
+
+function setView(name){
+  autoRotate = (name === '360');
+  controls.autoRotate = autoRotate;
+  controls.autoRotateSpeed = 2.5;
+
+  const d=2.2;
+  controls.target.set(0,0,0);
+  if(name==='front') camera.position.set(0,0,d);
+  if(name==='back')  camera.position.set(0,0,-d);
+  if(name==='edge')  camera.position.set(d,0,0);
+  if(name==='butt'){ controls.target.set(0,buttTarget+0.05,0); camera.position.set(0.08,buttTarget-0.45,0.3); }
+  if(name==='360'){ camera.position.set(d*0.8, 0.4, d*0.8); }
+  
+  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view === name));
+  controls.update(); redraw();
+}
+
+document.querySelectorAll('[data-view]').forEach(b=>{
+  b.onclick=()=>{
+    const v = b.dataset.view;
+    if (b.dataset.h) setHandle(+b.dataset.h);
+    setView(v);
+  };
+});
+
+// Quantity controls
+let cartQty = 1;
+$('qtyMinus').onclick = () => { if(cartQty > 1) { cartQty--; $('qtyVal').textContent = cartQty; $('vPrice').textContent = '€' + (169 * cartQty); } };
+$('qtyPlus').onclick = () => { cartQty++; $('qtyVal').textContent = cartQty; $('vPrice').textContent = '€' + (169 * cartQty); };
+$('btnCart').onclick = () => alert('Added ' + cartQty + ' custom PALIS blade(s) to cart!');
+
+// ================= Boot =================
+(async()=>{
+  try{
+    await prepareTextures();
+    let items;
+    try{ items=await readStep(); }
+    catch(e){ console.warn(e); items=await readGltf(); }
+    buildModel(items);
+    setView('front');
+    setHandle(1); 
+    handleResize();
+    renderer.render(scene,camera);
+    hideLoader();
+  }catch(e){
+    console.error(e);
+    hideLoader();
+  }
+})();
+
+renderer.setAnimationLoop(()=>{
+  const moved=controls.update();
+  if(moved || autoRotate || dirty){ renderer.render(scene,camera); dirty=false; }
+});
+</script>
+</body>
+</html>
