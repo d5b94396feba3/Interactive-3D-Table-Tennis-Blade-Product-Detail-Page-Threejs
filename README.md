@@ -1,4 +1,4 @@
-# 🏓 Interactive 3D Table Tennis Blade Configurator (Three.js & WebGL)
+# 🏓 Interactive 3D Table Tennis Blade Product Page (Three.js & WebGL)
 
 [![Dev.to Tutorial](https://img.shields.io/badge/dev.to-Read%20Full%20Tutorial-blue?style=for-the-badge&logo=devto)](https://dev.to/shahibur_rahman_6670cd024/interactive-3d-table-tennis-blade-configurator-with-threejs-complete-in-depth-tutorial-3lg9)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-View%20Configurator-brightgreen?style=for-the-badge)](https://shahisoft.com/fl/resonant/)
