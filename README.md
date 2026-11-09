@@ -71,8 +71,8 @@ Because this project uses ES Modules, WebAssembly (`occt-import-js`), and web wo
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/d5b94396feba3/resonant-3d-blade-configurator.git
-   cd resonant-3d-blade-configurator
+   git clone https://github.com/d5b94396feba3/Interactive-3D-Table-Tennis-Blade-Product-Detail-Page-Threejs
+   cd Interactive-3D-Table-Tennis-Blade-Product-Detail-Page-Threejs
 Serve locally using Python or Node.js:
 
 Bash
