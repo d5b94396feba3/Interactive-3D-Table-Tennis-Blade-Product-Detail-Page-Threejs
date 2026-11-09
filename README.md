@@ -70,12 +70,12 @@ For a deep-dive breakdown into how this configurator was built from scratch—in
 Because this project uses ES Modules, WebAssembly (`occt-import-js`), and web workers, it must be served over a local HTTP server:
 
 1. **Clone the repository:**
-   ```bash
+   ```
    git clone https://github.com/d5b94396feba3/Interactive-3D-Table-Tennis-Blade-Product-Detail-Page-Threejs
    cd Interactive-3D-Table-Tennis-Blade-Product-Detail-Page-Threejs
 Serve locally using Python or Node.js:
 
-Bash
+
 # Using Python 3
 python -m http.server 8000
 
