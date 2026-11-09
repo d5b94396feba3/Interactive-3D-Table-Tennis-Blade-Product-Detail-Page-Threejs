@@ -63,7 +63,6 @@ For a deep-dive breakdown into how this configurator was built from scratch—in
 ├── index.html              # Standalone 3D Viewer & App Code
 └── README.md
 
-
 ---
 
 ## 🚀 Quick Start / Local Setup
