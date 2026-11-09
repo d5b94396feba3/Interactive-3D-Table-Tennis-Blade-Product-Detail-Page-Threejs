@@ -12,7 +12,7 @@ A high-performance, photorealistic 3D product configurator built for table tenni
 
 ### Video Preview
 Check out the feature walkthrough video in the repository:
-> `assets/demo.mp4` *(or see the live demo link below)*
+> `assets/demo.mov` *(or see the live demo link below)*
 
 | Front View | Handle Butt (Logo Decal) |
 | :---: | :---: |
